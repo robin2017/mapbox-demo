@@ -14,12 +14,26 @@
 <body>
 
 <div id='map'></div>
-<div>
-    <div>左</div>
-    <div>右</div>
-    <div>前</div>
-    <div>后</div>
+<div style="position: absolute;z-index:1;right:20px;bottom:20px;width:100px;height:400px;">
+    <div class="inner" id="left">左</div>
+    <div  class="inner" id="right">右</div>
+    <div  class="inner" id="forward">前</div>
+    <div  class="inner" id="back">后</div>
 </div>
+<style>
+    .inner{
+        width:80px;
+        height:80px;
+        margin:10px;
+        display:flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #7F3121;
+        border-radius: 40px;
+        font-size: 40px;
+        cursor:pointer;
+    }
+</style>
 <script src="token.js"></script>
 <script>
 
@@ -68,6 +82,28 @@
                 });
             }
         }, true);
+        document.getElementById('left').addEventListener('click',function () {
+            map.easeTo({
+                bearing: map.getBearing() - deltaDegrees,
+                easing: easing
+            });
+        })
+        document.getElementById('right').addEventListener('click',function () {
+            map.easeTo({
+                bearing: map.getBearing() + deltaDegrees,
+                easing: easing
+            });
+        })
+        document.getElementById('forward').addEventListener('click',function () {
+            map.panBy([0, -deltaDistance], {
+                easing: easing
+            });
+        })
+        document.getElementById('back').addEventListener('click',function () {
+            map.panBy([0, deltaDistance], {
+                easing: easing
+            });
+        })
     });
 
 </script>
