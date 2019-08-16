@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+<link rel="stylesheet" href="2.css">
+
+<div id='map'></div>
+<div class='map-overlay top'>
+    <div class='map-overlay-inner'>
+        <fieldset>
+            <label>Select layer</label>
+            <select id='layer' name='layer'>
+                <option value='water'>Water</option>
+                <option value='building'>Buildings</option>
+            </select>
+        </fieldset>
+        <fieldset>
+            <label>Choose a color</label>
+            <div id='swatches'></div>
+        </fieldset>
+    </div>
+</div>
+<script src="token.js"></script>
+<script>
+
+    var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/light-v9',
+        center: [12.338, 45.4385],
+        zoom: 17.4
+    });
+
+    var swatches = document.getElementById('swatches');
+    var layer = document.getElementById('layer');
+    var colors = [
+        '#ffffcc',
+        '#a1dab4',
+        '#41b6c4',
+        '#2c7fb8',
+        '#253494',
+        '#fed976',
+        '#feb24c',
+        '#fd8d3c',
+        '#f03b20',
+        '#bd0026'
+    ];
+
+    colors.forEach(function(color) {
+        var swatch = document.createElement('button');
+        swatch.style.backgroundColor = color;
+        swatch.addEventListener('click', function() {
+            console.log('给图层:'+layer.value+" 添加颜色："+color)
+            //给不同图层添加颜色的API
+            map.setPaintProperty(layer.value, 'fill-color', color);
+        });
+        swatches.appendChild(swatch);
+    });
+</script>
+
+</body>
+</html>
