@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGL-Point</title>
+</head>
+
+<body>
+<canvas width="400" height="300"></canvas>
+<script src="robin.js"></script>
+
+
+<script>
+    const gl = document.querySelector('canvas').getContext('webgl');
+    // 着色器源代码
+    const VSHADER_SRC = `
+    attribute vec4 a_Position;
+    uniform vec4 u_Translation;
+    void main() {
+        gl_Position     = a_Position + u_Translation;
+    }
+`;
+    const FSHADER_SRC = `
+    void main() {
+        gl_FragColor = vec4(1.0, .0, .0, 1.0);
+    }
+`;
+    //清空绘制区域，使用黑色背景
+    gl.clearColor(0.0, .0, .0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    //点的顺序：左上，右上，左下，右上
+    var vertices = new Float32Array([
+        -0.5, .5, .5, 0.5, -0.5, -0.5, 0.5, -0.5
+    ]);
+    var program = initShaders(gl, VSHADER_SRC, FSHADER_SRC);
+    initVertexBuffers(gl, program, vertices);
+    //执行移动操作
+    var u_Translation = gl.getUniformLocation(program, 'u_Translation');
+    gl.uniform4f(u_Translation, .5, .5, .0, .0);
+
+    // 绘制点（v1,v2,v3构成一个三角形，v2,v3,v4也构成一个三角形）
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+</script>
+
+
+
+</body>
+
+</html>

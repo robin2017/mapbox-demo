@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGL-Point</title>
+</head>
+
+<body>
+<canvas width="400" height="300"></canvas>
+<script src="robin2.js"></script>
+<script>
+    const canvas = document.querySelector('canvas');
+    const gl = canvas.getContext('webgl');
+    // 着色器源代码
+    const VSHADER_SRC = `
+    attribute vec4 a_Position;
+    void main() {
+        gl_Position     = a_Position;
+        gl_PointSize     = 10.0;
+    }
+`;
+    const FSHADER_SRC = `
+    void main() {
+        gl_FragColor = vec4(1.0, .0, .0, 1.0);
+    }
+`;
+    //清空绘制区域，使用黑色背景
+    gl.clearColor(0.0, .0, .0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    //初始化着色器
+    let program = initShaders(gl, VSHADER_SRC, FSHADER_SRC);
+    //获取attribute的存储位置并赋值
+    var a_Position = gl.getAttribLocation(program, 'a_Position');
+
+
+    canvas.onmousedown = function (e) {
+        click(e, gl, canvas, a_Position)
+    };
+    //鼠标点击位置数组
+    var g_points = [];
+
+    function click(e, gl, canvas, a_Position) {
+        var x = e.clientX, y = e.clientY;
+        var rect = e.target.getBoundingClientRect();
+        x = ((x - rect.left) - canvas.width / 2) / (canvas.width / 2);
+        y = (canvas.height / 2 - (y - rect.top)) / (canvas.height / 2);
+        g_points.push(x);
+        g_points.push(y);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        var len = g_points.length;
+        for (var i = 0; i < len; i += 2) {
+            gl.vertexAttrib3f(a_Position, g_points[i], g_points[i + 1], .0)
+            gl.drawArrays(gl.POINTS, 0, 1);
+        }
+    }
+</script>
+</body>
+
+
+
+</html>

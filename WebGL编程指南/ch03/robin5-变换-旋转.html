@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGL-Point</title>
+</head>
+
+<body>
+<canvas width="400" height="300"></canvas>
+<script src="robin.js"></script>
+
+
+<script>
+    const gl = document.querySelector('canvas').getContext('webgl');
+    // 着色器源代码
+    const VSHADER_SRC = `
+    attribute vec4 a_Position;
+    uniform float u_CosB,u_SinB;
+    void main() {
+        gl_Position.x = a_Position.x * u_CosB - a_Position.y * u_SinB;
+        gl_Position.y = a_Position.x * u_SinB + a_Position.y * u_CosB;
+        gl_Position.z = a_Position.z;
+        gl_Position.w = 1.0;
+    }
+`;
+    const FSHADER_SRC = `
+    void main() {
+        gl_FragColor = vec4(1.0, .0, .0, 1.0);
+    }
+`;
+    //清空绘制区域，使用黑色背景
+    gl.clearColor(0.0, .0, .0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    //点的顺序：左上，右上，左下，右上
+    var vertices = new Float32Array([
+        -0.5, .5, .5, 0.5, -0.5, -0.5
+    ]);
+    var program = initShaders(gl, VSHADER_SRC, FSHADER_SRC);
+    initVertexBuffers(gl, program, vertices);
+
+    //执行旋转操作
+    var radian = Math.PI * 60 / 180.0;
+    var cosB = Math.cos(radian);
+    var sinB = Math.sin(radian);
+    var u_CosB = gl.getUniformLocation(program, 'u_CosB');
+    var u_SinB = gl.getUniformLocation(program, 'u_SinB');
+    gl.uniform1f(u_CosB, cosB);
+    gl.uniform1f(u_SinB, sinB);
+
+    // 绘制点（v1,v2,v3构成一个三角形，v2,v3,v4也构成一个三角形）
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+</script>
+
+
+</body>
+
+</html>
