@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGL-Point</title>
+</head>
+
+<body>
+<canvas width="400" height="300"></canvas>
+<script src="robin1.js"></script>
+
+
+<script>
+    const gl = document.querySelector('canvas').getContext('webgl');
+    // 着色器源代码
+    const VSHADER_SRC = `
+    attribute vec4 a_Position;
+    attribute float a_PointSize;
+    void main() {
+        gl_Position  = a_Position;
+        gl_PointSize = a_PointSize;
+    }
+`;
+    const FSHADER_SRC = `
+    void main() {
+        gl_FragColor = vec4(1.0, .0, .0, 1.0);
+    }
+`;
+    //清空绘制区域，使用黑色背景
+    gl.clearColor(0.0, .0, .0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    //点的顺序：左上，右上，左下
+    var verticesSizes = new Float32Array([
+        -0.5, .5, 10.0,
+        .5, 0.5, 20.0,
+        -0.5, -0.5, 30.0
+    ]);
+    var sizes = new Float32Array([
+        10.0, 20.0, 30.0
+    ]);
+    var program = initShaders(gl, VSHADER_SRC, FSHADER_SRC);
+    initVertexBuffersPositionSize(gl, program, verticesSizes);
+
+    // 绘制点（v1,v2,v3构成一个三角形，v2,v3,v4也构成一个三角形）
+    gl.drawArrays(gl.POINTS, 0, 3);
+
+    //使用缓冲区对象向顶点着色器传入多个顶点数据
+    function initVertexBuffersPositionSize(gl, program, verticesSizes) {
+        // 1、创建缓冲区对象
+        var vertexSizeBuffer = gl.createBuffer();
+        // 2、绑定缓冲区对象
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexSizeBuffer);
+        // 3、将数据写入缓冲区对象
+        gl.bufferData(gl.ARRAY_BUFFER, verticesSizes, gl.STATIC_DRAW);
+
+        var FSIZE = verticesSizes.BYTES_PER_ELEMENT;
+        console.log('FSIZE:', FSIZE);//4
+
+        var a_Position = gl.getAttribLocation(program, "a_Position");
+        gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, FSIZE * 3, FSIZE * 0);
+        gl.enableVertexAttribArray(a_Position);
+
+        var a_PointSize = gl.getAttribLocation(program, "a_PointSize");
+        gl.vertexAttribPointer(a_PointSize, 1, gl.FLOAT, false, FSIZE * 3, FSIZE * 2);
+        gl.enableVertexAttribArray(a_PointSize);
+    }
+</script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGL-Point</title>
+</head>
+
+<body>
+<canvas width="400" height="300"></canvas>
+<script src="robin1.js"></script>
+
+
+<script>
+    const gl = document.querySelector('canvas').getContext('webgl');
+    // 着色器源代码
+    const VSHADER_SRC = `
+    attribute vec4 a_Position;
+    void main() {
+        gl_Position     = a_Position;
+        gl_PointSize = 10.0;
+    }
+`;
+    const FSHADER_SRC = `
+    void main() {
+        gl_FragColor = vec4(1.0, .0, .0, 1.0);
+    }
+`;
+    //清空绘制区域，使用黑色背景
+    gl.clearColor(0.0, .0, .0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    //点的顺序：左上，右上，左下
+    var vertices = new Float32Array([
+        -0.5, .5, .5, 0.5, -0.5, -0.5
+    ]);
+    var program = initShaders(gl, VSHADER_SRC, FSHADER_SRC);
+    initVertexBuffers(gl, program, vertices, "a_Position");
+    // 绘制点（v1,v2,v3构成一个三角形，v2,v3,v4也构成一个三角形）
+    gl.drawArrays(gl.POINTS, 0, 3);
+
+    //使用缓冲区对象向顶点着色器传入多个顶点数据
+    function initVertexBuffers(gl, program, vertices, valName) {
+        // 1、创建缓冲区对象
+        var vertexBuffer = gl.createBuffer();
+        // 2、绑定缓冲区对象
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        // 3、将数据写入缓冲区对象
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+        var val = gl.getAttribLocation(program, valName);
+        // 4、将缓冲区对象分配给一个attribute变量
+        gl.vertexAttribPointer(val, 2, gl.FLOAT, false, 0, 0);
+        // 5、开启attribute变量
+        gl.enableVertexAttribArray(val);
+    }
+</script>
+
+
+</body>
+
+</html>
