@@ -56,6 +56,7 @@
 
     //视图矩阵数据
     function tick() {
+        alpha+=0.1;
         //在x-z平面上转动
         var x = Math.sin(alpha * Math.PI / 360), z = Math.cos(alpha * Math.PI / 360);
         viewMatrix.setLookAt(x, .0, z, .0, .0, -1.0, .0, 1.0, .0);
