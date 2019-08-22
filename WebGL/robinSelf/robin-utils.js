@@ -25,7 +25,18 @@ robinUtils.initShaders = function (gl, VSHADER_SRC, FSHADER_SRC) {
     //挂载到对象上
     gl.program = program
 };
-
+/**
+ * 初始化数据缓冲
+ * 都是程式化的细节
+ * */
+robinUtils.initDataBuffer = function (gl, data) {
+    // 1、创建缓冲区对象
+    var bufferObj = gl.createBuffer();
+    // 2、绑定缓冲区对象
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferObj);
+    // 3、将数据写入缓冲区对象
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+}
 
 robinUtils.request = function (fileName) {
     return new Promise((resolve) => {

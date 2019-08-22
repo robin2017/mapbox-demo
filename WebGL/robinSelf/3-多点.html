@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>1、绘制多个点</h1>
+<canvas id="canvas" width="400" height="300"></canvas>
+<script src="robin-utils.js"></script>
+<script>
+    main();
+
+    async function main() {
+        //1、得到gl
+        const gl = document.getElementById('canvas').getContext('webgl');
+        //2、获取数据
+        const src = await Promise.all([robinUtils.request('3.vert'),
+            robinUtils.request('3.frag')]);
+
+        //3、设置并应用黑色背景
+        gl.clearColor(0.0, .0, .0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        //4、初始化着色器
+        robinUtils.initShaders(gl, src[0], src[1]);
+
+        //5、初始化数据缓存
+        robinUtils.initDataBuffer(gl, new Float32Array([
+            -0.5, .5, .5, 0.5, -0.5, -0.5
+        ]));
+
+        //6、得到位置并赋值
+        var val = gl.getAttribLocation(gl.program, 'myPoints');
+        /**
+         * @param index 属性的下标指向位置，即指针
+         * @param size 每个顶点由两个数据(x,y)表示
+         * @param type 每个数据类型
+         * @param normalized 转换为浮点数时是否应该将整数数值归一化到特定的范围，
+         *        type为float是参数无效
+         * @param stride 相邻顶点属性之间步幅的字节数，0表示同一类数据
+         * @param offset 该属性在一组属性中的位置，以0开始
+         * */
+        gl.vertexAttribPointer(val, 2, gl.FLOAT, true, 0, 0);
+        //开启数组，否则只绘制一个点
+        gl.enableVertexAttribArray(gl.getAttribLocation(gl.program, 'myPoints'));
+
+        //7、画图
+        /**
+         * @param mode 绘制图元模式
+         * @param first 从哪个点绘制
+         * @param count 需要绘制多少点
+         * */
+        gl.drawArrays(gl.POINTS, 0, 3);
+    }
+
+</script>
+</body>
+</html>
