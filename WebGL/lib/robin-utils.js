@@ -22,8 +22,15 @@ robinUtils.initShaders = function (gl, VSHADER_SRC, FSHADER_SRC) {
     gl.attachShader(program, vShader);
     gl.attachShader(program, fShader);
 
-    // 链接程序
+    // 链接程序（如果GLSL有问题，此处报错）
     gl.linkProgram(program);
+    var linked = gl.getProgramParameter(program, gl.LINK_STATUS);
+    if (!linked) {
+        var error = gl.getProgramInfoLog(program);
+        console.log('Failed to link program: ' + error+' /请检查GLSL是否有误');
+        gl.deleteProgram(program);
+        return null;
+    }
 
     // 使用程序
     gl.useProgram(program);

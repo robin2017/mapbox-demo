@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>1、绘制多个点</h1>
+<canvas id="canvas" width="400" height="300"></canvas>
+<script src="robin-utils.js"></script>
+<script>
+    main();
+
+    async function main() {
+        const FSIZE = 4;
+        //1、得到gl
+        const gl = document.getElementById('canvas').getContext('webgl');
+        //2、获取数据
+        const src = await Promise.all([robinUtils.request('5.vert'),
+            robinUtils.request('5.frag')]);
+
+        //3、设置并应用黑色背景
+        gl.clearColor(0.0, .0, .0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        //4、初始化着色器
+        robinUtils.initShaders(gl, src[0], src[1]);
+
+        //5、初始化数据缓存(每个顶点，前两个表示位置，后一个表示大小)
+        robinUtils.initDataBuffer(gl, new Float32Array([
+            -0.5, .5, 10.0, 1.0, .0, .0,
+            .5, 0.5, 20.0, .0, 1.0, .0,
+            -0.5, -0.5, 30.0, .0, .0, 1.0
+        ]));
+
+        //6、得到位置并赋值
+        /**
+         * @param size 每个顶点由2个数据表示位置，1个数据表示大小，3个数据表示颜色，所有之合为间隔6
+         * @param stride 相邻顶点属性之间步幅的字节数，间隔是6
+         * @param offset 该属性在一组属性中的位置，分别为0,2,3
+         * */
+        gl.vertexAttribPointer(gl.getAttribLocation(gl.program, 'myPosition'), 2, gl.FLOAT, true, FSIZE * 6, FSIZE * 0);
+        gl.enableVertexAttribArray(gl.getAttribLocation(gl.program, 'myPosition'));
+
+        gl.vertexAttribPointer(gl.getAttribLocation(gl.program, 'myPointSize'), 1, gl.FLOAT, true, FSIZE * 6, FSIZE * 2);
+        gl.enableVertexAttribArray(gl.getAttribLocation(gl.program, 'myPointSize'));
+
+        gl.vertexAttribPointer(gl.getAttribLocation(gl.program, 'myColor'), 3, gl.FLOAT, true, FSIZE * 6, FSIZE * 3);
+        gl.enableVertexAttribArray(gl.getAttribLocation(gl.program, 'myColor'));
+
+        //7、画图
+        /**
+         * @param mode 绘制图元模式
+         * @param first 从哪个点绘制
+         * @param count 需要绘制多少点
+         * */
+        gl.drawArrays(gl.POINTS, 0, 3);
+    }
+
+</script>
+</body>
+</html>
