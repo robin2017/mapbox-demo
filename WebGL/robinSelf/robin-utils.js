@@ -38,6 +38,12 @@ robinUtils.initDataBuffer = function (gl, data) {
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
 }
 
+robinUtils.initIndexBuffer = function (gl, data) {
+    var Index_Buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, Index_Buffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, data, gl.STATIC_DRAW);
+}
+
 robinUtils.request = function (fileName) {
     return new Promise((resolve) => {
         var xhr = new XMLHttpRequest();

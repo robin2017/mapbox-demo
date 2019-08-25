@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebGL2.0 Demo-Camera</title>
+</head>
+<script>
+    var VertexShader='#version 300 es \n' +
+        'uniform mat4 uMVPMatrix; \n ' +                    //总变换矩阵
+        ' in vec3 aPosition; \n' +                          //顶点位置
+        '  in vec4 aColor; \n' +                            //顶点颜色
+        'out vec4 aaColor;\n' +                             //传递给片元着色器的变量
+        'void main(){\n' +
+        'gl_Position=uMVPMatrix * vec4(aPosition,1);\n' +
+        'aaColor=aColor;\n' +
+        '}\n';
+
+    var FragmentShader='#version 300 es \n' +
+        'precision mediump float; \n' +
+        'in vec4 aaColor; \n' +                 //接受顶点着色器的值
+        'out vec4 fragColor; \n' +              //输出到片元的颜色
+        'void main(){ \n' +
+        'fragColor=aaColor;\n' +                //给此片元的颜色值
+        '}\n';
+    var vertexBuffer;                       //顶点缓冲
+    var colorBuffer;                        //顶点颜色缓冲
+    var gl;                                 //gl上下文
+    var g_eyeX = 0.4;                       //视点x
+    var g_eyeZ = 0.4;                       //视点z
+    var angle=0.8300000000000005;           //初始角度
+    //链接着色器
+    function initShader(gl) {
+        var vertexShader=gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vertexShader,VertexShader.toString());
+        gl.compileShader(vertexShader);
+        compileDetection(gl,vertexShader);
+        var fragmentShader=gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fragmentShader,FragmentShader.toString());
+        gl.compileShader(fragmentShader);
+        compileDetection(gl,fragmentShader);
+
+        var shaderProgram=gl.createProgram();
+        gl.attachShader(shaderProgram,vertexShader);
+        gl.attachShader(shaderProgram,fragmentShader);
+        gl.linkProgram(shaderProgram);
+        gl.useProgram(shaderProgram);
+        gl.program=shaderProgram;
+
+    }
+    //绑定数据
+    function bindDataBuffer(gl){
+        var UNIT_SIZE=0.1;
+        //顶点缓冲
+        var vertices=[
+            //前面
+            0.0,0.0,UNIT_SIZE,
+            UNIT_SIZE,UNIT_SIZE,UNIT_SIZE,
+            -UNIT_SIZE,UNIT_SIZE,UNIT_SIZE,
+            0.0,0.0,UNIT_SIZE,
+            -UNIT_SIZE,UNIT_SIZE,UNIT_SIZE,
+            -UNIT_SIZE,-UNIT_SIZE,UNIT_SIZE,
+            0.0,0.0,UNIT_SIZE,
+            -UNIT_SIZE,-UNIT_SIZE,UNIT_SIZE,
+            UNIT_SIZE,-UNIT_SIZE,UNIT_SIZE,
+            0.0,0.0,UNIT_SIZE,
+            UNIT_SIZE,-UNIT_SIZE,UNIT_SIZE,
+            UNIT_SIZE,UNIT_SIZE,UNIT_SIZE,
+            //后面
+            0.0,0.0,-UNIT_SIZE,
+            UNIT_SIZE,UNIT_SIZE,-UNIT_SIZE,
+            UNIT_SIZE,-UNIT_SIZE,-UNIT_SIZE,
+            0.0,0.0,-UNIT_SIZE,
+            UNIT_SIZE,-UNIT_SIZE,-UNIT_SIZE,
+            -UNIT_SIZE,-UNIT_SIZE,-UNIT_SIZE,
+            0.0,0.0,-UNIT_SIZE,
+            -UNIT_SIZE,-UNIT_SIZE,-UNIT_SIZE,
+            -UNIT_SIZE,UNIT_SIZE,-UNIT_SIZE,
+            0.0,0.0,-UNIT_SIZE,
+            -UNIT_SIZE,UNIT_SIZE,-UNIT_SIZE,
+            UNIT_SIZE,UNIT_SIZE,-UNIT_SIZE,
+            //左面
+            -UNIT_SIZE,0.0,0.0,
+            -UNIT_SIZE,UNIT_SIZE,UNIT_SIZE,
+            -UNIT_SIZE,UNIT_SIZE,-UNIT_SIZE,
+            -UNIT_SIZE,0.0,0.0,
+            -UNIT_SIZE,UNIT_SIZE,-UNIT_SIZE,
+            -UNIT_SIZE,-UNIT_SIZE,-UNIT_SIZE,
+            -UNIT_SIZE,0.0,0.0,
+            -UNIT_SIZE,-UNIT_SIZE,-UNIT_SIZE,
+            -UNIT_SIZE,-UNIT_SIZE,UNIT_SIZE,
+            -UNIT_SIZE,0.0,0.0,
+            -UNIT_SIZE,-UNIT_SIZE,UNIT_SIZE,
+            -UNIT_SIZE,UNIT_SIZE,UNIT_SIZE,
+            //右面
+            UNIT_SIZE,0.0,0.0,
+            UNIT_SIZE,UNIT_SIZE,UNIT_SIZE,
+            UNIT_SIZE,-UNIT_SIZE,UNIT_SIZE,
+            UNIT_SIZE,0.0,0.0,
+            UNIT_SIZE,-UNIT_SIZE,UNIT_SIZE,
+            UNIT_SIZE,-UNIT_SIZE,-UNIT_SIZE,
+            UNIT_SIZE,0.0,0.0,
+            UNIT_SIZE,-UNIT_SIZE,-UNIT_SIZE,
+            UNIT_SIZE,UNIT_SIZE,-UNIT_SIZE,
+            UNIT_SIZE,0.0,0.0,
+            UNIT_SIZE,UNIT_SIZE,-UNIT_SIZE,
+            UNIT_SIZE,UNIT_SIZE,UNIT_SIZE,
+            //上面
+            0.0,UNIT_SIZE,0.0,
+            UNIT_SIZE,UNIT_SIZE,UNIT_SIZE,
+            UNIT_SIZE,UNIT_SIZE,-UNIT_SIZE,
+            0.0,UNIT_SIZE,0.0,
+            UNIT_SIZE,UNIT_SIZE,-UNIT_SIZE,
+            -UNIT_SIZE,UNIT_SIZE,-UNIT_SIZE,
+            0.0,UNIT_SIZE,0.0,
+            -UNIT_SIZE,UNIT_SIZE,-UNIT_SIZE,
+            -UNIT_SIZE,UNIT_SIZE,UNIT_SIZE,
+            0.0,UNIT_SIZE,0.0,
+            -UNIT_SIZE,UNIT_SIZE,UNIT_SIZE,
+            UNIT_SIZE,UNIT_SIZE,UNIT_SIZE,
+            //下面
+            0.0,-UNIT_SIZE,0.0,
+            UNIT_SIZE,-UNIT_SIZE,UNIT_SIZE,
+            -UNIT_SIZE,-UNIT_SIZE,UNIT_SIZE,
+            0.0,-UNIT_SIZE,0.0,
+            -UNIT_SIZE,-UNIT_SIZE,UNIT_SIZE,
+            -UNIT_SIZE,-UNIT_SIZE,-UNIT_SIZE,
+            0.0,-UNIT_SIZE,0.0,
+            -UNIT_SIZE,-UNIT_SIZE,-UNIT_SIZE,
+            UNIT_SIZE,-UNIT_SIZE,-UNIT_SIZE,
+            0.0,-UNIT_SIZE,0.0,
+            UNIT_SIZE,-UNIT_SIZE,-UNIT_SIZE,
+            UNIT_SIZE,-UNIT_SIZE,UNIT_SIZE
+        ];
+        vertexBuffer=gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER,vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.STATIC_DRAW);
+        //颜色缓冲
+        var colors=[
+            //前面
+            1.0,1.0,1.0,1.0,//中间为白色
+            1.0,0.0,0.0,1.0,
+            1.0,0.0,0.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            1.0,0.0,0.0,1.0,
+            1.0,0.0,0.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            1.0,0.0,0.0,1.0,
+            1.0,0.0,0.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            1.0,0.0,0.0,1.0,
+            1.0,0.0,0.0,1.0,
+            //后面
+            1.0,1.0,1.0,1.0,//中间为白色
+            0.0,0.0,1.0,1.0,
+            0.0,0.0,1.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            0.0,0.0,1.0,1.0,
+            0.0,0.0,1.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            0.0,0.0,1.0,1.0,
+            0.0,0.0,1.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            0.0,0.0,1.0,1.0,
+            0.0,0.0,1.0,1.0,
+            //左面
+            1.0,1.0,1.0,1.0,//中间为白色
+            1.0,0.0,1.0,1.0,
+            1.0,0.0,1.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            1.0,0.0,1.0,1.0,
+            1.0,0.0,1.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            1.0,0.0,1.0,1.0,
+            1.0,0.0,1.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            1.0,0.0,1.0,1.0,
+            1.0,0.0,1.0,1.0,
+            //右面
+            1.0,1.0,1.0,1.0,//中间为白色
+            1.0,1.0,0.0,1.0,
+            1.0,1.0,0.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            1.0,1.0,0.0,1.0,
+            1.0,1.0,0.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            1.0,1.0,0.0,1.0,
+            1.0,1.0,0.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            1.0,1.0,0.0,1.0,
+            1.0,1.0,0.0,1.0,
+            //上面
+            1.0,1.0,1.0,1.0,//中间为白色
+            0.0,1.0,0.0,1.0,
+            0.0,1.0,0.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            0.0,1.0,0.0,1.0,
+            0.0,1.0,0.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            0.0,1.0,0.0,1.0,
+            0.0,1.0,0.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            0.0,1.0,0.0,1.0,
+            0.0,1.0,0.0,1.0,
+            //下面
+            1.0,1.0,1.0,1.0,//中间为白色
+            0.0,1.0,1.0,1.0,
+            0.0,1.0,1.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            0.0,1.0,1.0,1.0,
+            0.0,1.0,1.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            0.0,1.0,1.0,1.0,
+            0.0,1.0,1.0,1.0,
+            1.0,1.0,1.0,1.0,//中间为白色
+            0.0,1.0,1.0,1.0,
+            0.0,1.0,1.0,1.0
+        ];
+        colorBuffer=gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER,colorBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(colors),gl.STATIC_DRAW);
+
+        return vertices.length/3;
+    }
+    //程序入口
+    function start() {
+        var canvas = document.getElementById("webglcanvas");
+        gl = canvas.getContext('webgl2', { antialias: true });
+        if (!gl)                                        //若获取GL上下文失败
+        {
+            alert("创建GLES上下文失败，不支持webGL2.0!");//显示错误提示信息
+            return;
+        }
+        //初始化着色器
+        initShader(gl);
+        //绑定数据
+        var n = bindDataBuffer(gl);
+        //设置视口
+        gl.viewport(0,0,canvas.width, canvas.height);
+        gl.enable(gl.DEPTH_TEST);
+        //初始化相机坐标
+        g_eyeX=0.4*Math.cos(angle);
+        g_eyeZ=0.4*Math.sin(angle);
+        //主绘制方法
+        draw(gl,n);
+        //dom监听
+        document.onkeydown = function (event) {
+            if(event.key === 'a') {
+                angle+=0.01;
+                g_eyeX=0.4*Math.cos(angle);
+                g_eyeZ=0.4*Math.sin(angle);
+                console.log(angle)
+                draw(gl,n);
+            }
+        }
+    }
+    //主绘制方法
+    function draw(gl,n) {
+
+        var cameraMatrix=multiMatrix44(getOrthoProjection(-1.0,1.0,-1.0,1.0,-1.0,1.0),setcamera(g_eyeX,0.4,g_eyeZ,0,0,0,0,1,0));
+        console.log(getOrthoProjection(-1.0,1.0,-1.0,1.0,-1.0,1.0))
+        var uMVPMatrix=gl.getUniformLocation(gl.program,"uMVPMatrix");
+        gl.uniformMatrix4fv(uMVPMatrix,false,new Float32Array(cameraMatrix));
+
+        var a_Position=gl.getAttribLocation(gl.program,"aPosition");
+        gl.enableVertexAttribArray(a_Position);
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.vertexAttribPointer(a_Position,3,gl.FLOAT,false,0,0);
+
+        var a_Color=gl.getAttribLocation(gl.program,"aColor");
+        gl.enableVertexAttribArray(a_Color);
+        gl.bindBuffer(gl.ARRAY_BUFFER,colorBuffer);
+        gl.vertexAttribPointer(a_Color,4,gl.FLOAT,false,0,0);
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);// 指定清空canvas的颜色
+        gl.clear(gl.COLOR_BUFFER_BIT );
+        gl.drawArrays(gl.TRIANGLES, 0, n);
+    }
+    //着色器编译检测
+    function compileDetection (gl,shader) {
+        var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        if (!compiled && !gl.isContextLost()) {//若编译出错
+            var error = gl.getShaderInfoLog(shader);//获取错误信息
+            console.log("*** Error compiling shader '"+error);//打印错误信息
+
+        }
+    }
+    /**
+     * @param x偏移量
+     * @param y偏移量
+     * @param x偏移量
+     * @return  平移矩阵
+     */
+    function translation(x,y,z) {
+        return [
+            1.0,0.0,0.0,0.0,
+            0.0,1.0,0.0,0.0,
+            0.0,0.0,1.0,0.0,
+            x,y,z,1.0,
+        ];
+    }
+    function setcamera(eyeX,eyeY,eyeZ,targetX,targetY,targetZ,upX,upY,upZ) {
+        //求向量空间下的基(摄像机)
+        var zAxis=subVector([targetX,targetY,targetZ],[eyeX,eyeY,eyeZ]);
+        var N=normalizeVector(zAxis);
+
+        var xAxis=crossMultiVector(N,[upX,upY,upZ]);
+        var U=normalizeVector(xAxis);
+
+        var V=crossMultiVector(U,N);
+        //旋转矩阵(线性变换部分为基变换公式中的过度矩阵)
+        var R=[
+            U[0],V[0],-N[0],0,
+            U[1],V[1],-N[1],0,
+            U[2],V[2],-N[2],0,
+            0,0,0,1
+        ]
+        //平移矩阵(实际上是将两个坐标系变换到同一个向量空间下)
+        var T=translation(-eyeX,-eyeY,-eyeZ);
+        console.log("摄像机"+multiMatrix44(R,T))
+        return multiMatrix44(R,T);
+    }
+
+    /**向量及矩阵运算**/
+    //向量减法
+    function subVector(v1,v2) {
+        return[v1[0]-v2[0],v1[1]-v2[1],v1[2]-v2[2]];
+    }
+    //向量加法
+    function addVector(v1,v2) {
+        return[v1[0]+v2[0],v1[1]+v2[1],v1[2]+v2[2]];
+    }
+    //向量归一化
+    function normalizeVector(v) {
+        var len=Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+        return (len>0.00001)? [v[0]/len,v[1]/len,v[2]/len]:[0,0,0];
+    }
+    //向量叉乘
+    function crossMultiVector(v1,v2) {
+        return[
+            v1[1]*v2[2]-v1[2]*v2[1],
+            v1[2]*v2[0]-v1[0]*v2[2],
+            v1[0]*v2[1]-v1[1]*v2[0]
+        ]
+    }
+    //向量点乘
+    function dotMultiVector(v1, v2) {
+        var res = 0;
+        for (var i = 0; i < v1.length; i++) {
+            res += v1[i] * v2[i];
+        }
+        return res;
+    }
+    //矩阵转置
+    function transposeMatrix(mat) {
+        var res = new Float32Array(16);
+        for (var i = 0; i < 4; i++) {
+            for (var j = 0; j < 4; j++) {
+                res[i * 4 + j] = mat[j * 4 + i];
+            }
+        }
+        return res;
+    }
+    //4 x 4 矩阵乘法
+    function multiMatrix44(m1, m2) {
+        var mat1 = transposeMatrix(m1);
+        var mat2 = transposeMatrix(m2);
+
+        var res = new Float32Array(16);
+        for (var i = 0; i < 4; i++) {
+            var row = [mat1[i * 4], mat1[i * 4 + 1], mat1[i * 4 + 2], mat1[i * 4 + 3]];
+            for (var j = 0; j < 4; j++) {
+                var col = [mat2[j], mat2[j + 4], mat2[j + 8], mat2[j + 12]];
+                res[i * 4 + j] = dotMultiVector(row, col);
+            }
+        }
+        return transposeMatrix(res);
+    }
+    function getOrthoProjection(left, right, bottom, top, near, far) {
+        var rw = 1 / (right - left);
+        var rh = 1 / (top - bottom);
+        var rd = 1 / (far - near);
+
+        return [
+            2 * rw, 0, 0, 0,
+            0, 2 * rw, 0, 0,
+            0, 0, -2 * rd, 0.0,
+            -(right + left) * rw, -(top + bottom) * rh, -(far + near) * rd, 1
+        ];
+    }
+</script>
+<body onload="start();">
+<canvas height="800" width="800" id="webglcanvas" >
+    若看到这个文字，说明浏览器不支持WebGl 2.0
+</canvas>
+</body>
+</html>

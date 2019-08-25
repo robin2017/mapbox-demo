@@ -35,15 +35,24 @@
 
         function tick() {
             draw((Date.now() - startTime) * moveRatio);
-            requestAnimationFrame(tick);
+           // requestAnimationFrame(tick);
         }
 
         function draw(val) {
+
+            var mat1 = new Float32Array([
+                1.0, .0, .0, .0,
+                .0, 1.0, .0, .0,
+                .0, .0, 1.0, .0,
+                .0, .0, .0, 1.0
+            ]);
+
             //设置视图数据
             var mvpMatrix = new Matrix4();
             mvpMatrix.setPerspective(30, 1, 1, 100);
             mvpMatrix.lookAt(8 * Math.sin(val), 3, 8 * Math.cos(val), 0, 0, 0, 0, 1, 0);
 
+            console.log('矩阵：',mvpMatrix.elements)
             //绘图
             gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -84,7 +93,7 @@
 
         // Create a buffer object
         var vertexColorBuffer = gl.createBuffer();
-        var indexBuffer = gl.createBuffer();
+
         // Write the vertex coordinates and color to the buffer object
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, verticesColors, gl.STATIC_DRAW);
@@ -100,6 +109,7 @@
         gl.enableVertexAttribArray(a_Color);
 
         // Write the indices to the buffer object
+        var indexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
         return indices.length;

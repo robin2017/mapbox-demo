@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>1、绘制多个点</h1>
+<canvas id="canvas" width="400" height="400"></canvas>
+<script src="robin-utils.js"></script>
+<script>
+    main();
+
+    async function main() {
+        const FSIZE = 4;
+        //1、得到gl
+        const gl = document.getElementById('canvas').getContext('webgl');
+        //2、获取数据
+        const src = await Promise.all([robinUtils.request('10.vert'),
+            robinUtils.request('10.frag')]);
+        //3、设置并应用黑色背景
+        gl.clearColor(0.0, .0, .0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        //4、初始化着色器
+        robinUtils.initShaders(gl, src[0], src[1]);
+        //5、初始化数据缓存(x,y,r,g,b)
+        robinUtils.initDataBuffer(gl, new Float32Array([
+            -0.5, .5, 1.0, .0, .0,//0
+            .5, .5, 1.0, 1.0, .0,//1
+            -0.5, -0.5, .0, 1.0, .0,//2
+            .5, -0.5, .0, 1.0, 1.0,//3
+        ]));
+        //6、得到位置数据并赋值
+        gl.vertexAttribPointer(gl.getAttribLocation(gl.program, 'myPosition'), 2, gl.FLOAT, true, FSIZE * 5, FSIZE * 0);
+        gl.enableVertexAttribArray(gl.getAttribLocation(gl.program, 'myPosition'));
+        gl.vertexAttribPointer(gl.getAttribLocation(gl.program, 'myColor'), 3, gl.FLOAT, true, FSIZE * 5, FSIZE * 2);
+        gl.enableVertexAttribArray(gl.getAttribLocation(gl.program, 'myColor'));
+
+        //7、画图
+        // gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        //7、得到位置索引并赋值
+        robinUtils.initIndexBuffer(gl, new Uint8Array([
+            0, 1, 2, 1, 2, 3
+        ]));
+        //8、画图
+        gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
+    }
+
+</script>
+</body>
+</html>

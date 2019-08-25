@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>1、绘制一个点</h1>
+<canvas id="canvas" width="400" height="300"></canvas>
+<script src="robin-utils.js"></script>
+<script>
+    main();
+
+    async function main() {
+        //1、得到gl
+        const gl = document.getElementById('canvas').getContext('webgl');
+        //2、获取数据
+        const src = await Promise.all([robinUtils.request('7.vert'),
+            robinUtils.request('7.frag')]);
+
+        //3、设置并应用黑色背景
+        gl.clearColor(0.0, .0, .0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        //4、初始化着色器
+        robinUtils.initShaders(gl, src[0], src[1]);
+
+        //5、得到位置指针并赋值
+        gl.vertexAttrib3f(gl.getAttribLocation(gl.program, 'myPoint'), 0, 0, 0);
+
+        //6、得到变换矩阵指针并赋值（主列）
+        gl.uniformMatrix4fv(gl.getUniformLocation(gl.program, 'myMat4'), false, new Float32Array([
+            1.0, .0, .0, .0,
+            .0, 1.0, .0, .0,
+            .0, .0, 1.0, .0,
+            .5, .5, .0, 1.0
+        ]));
+
+        //6、画图
+        gl.drawArrays(gl.POINTS, 0, 1);
+    }
+
+</script>
+</body>
+</html>

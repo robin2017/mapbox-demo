@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>1、绘制多个点</h1>
+<canvas id="canvas" width="400" height="300"></canvas>
+<script src="../lib/cuon-matrix.js"></script>
+<script src="robin-utils.js"></script>
+<script>
+    main();
+
+    async function main() {
+        const FSIZE = 4;
+        //1、得到gl
+        const gl = document.getElementById('canvas').getContext('webgl');
+        //2、获取数据
+        const src = await Promise.all([robinUtils.request('9.vert'),
+            robinUtils.request('9.frag')]);
+
+        //3、设置并应用黑色背景
+        gl.clearColor(0.0, .0, .0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        //4、初始化着色器
+        robinUtils.initShaders(gl, src[0], src[1]);
+
+        //5、初始化数据缓存(x,y,z,size,r,g,b)
+        robinUtils.initDataBuffer(gl, new Float32Array([
+            -0.5, .5, .5, 30.0, 1.0, .0, .0,//正z，大点
+            .5, 0.5, .5, 30.0, 1.0, .0, .0,
+            -0.5, .5, -0.5, 20.0, .0, 1.0, .0,//负z，小点
+            .5, 0.5, -0.5, 20.0, .0, 1.0, .0,
+        ]));
+
+        //6、得到位置并赋值
+        gl.vertexAttribPointer(gl.getAttribLocation(gl.program, 'myPosition'), 3, gl.FLOAT, true, FSIZE * 7, FSIZE * 0);
+        gl.enableVertexAttribArray(gl.getAttribLocation(gl.program, 'myPosition'));
+
+        gl.vertexAttribPointer(gl.getAttribLocation(gl.program, 'myPointSize'), 1, gl.FLOAT, true, FSIZE * 7, FSIZE * 3);
+        gl.enableVertexAttribArray(gl.getAttribLocation(gl.program, 'myPointSize'));
+
+        gl.vertexAttribPointer(gl.getAttribLocation(gl.program, 'myColor'), 3, gl.FLOAT, true, FSIZE * 7, FSIZE * 4);
+        gl.enableVertexAttribArray(gl.getAttribLocation(gl.program, 'myColor'));
+
+        //7、得到视图矩阵并赋值
+        var mat1 = new Float32Array([
+            1.0, .0, .0, .0,
+            .0, 1.0, .0, .0,
+            .0, .0, 1.0, .0,
+            .0, .0, .0, 1.0
+        ]);
+        var viewMat2 = new Matrix4();
+        //setLookAt(atX,atY,atZ,eyeX,eyeY,eyeZ,upX,upY,upZ)
+        viewMat2.setLookAt(.0, .0, .0, .0, .0, -1.0, .0, 1.0, .0);//等价于mat1
+        var mat2 = viewMat2.elements;
+
+        var viewMat3 = new Matrix4();
+        //setLookAt(atX,atY,atZ,eyeX,eyeY,eyeZ,upX,upY,upZ)
+        viewMat3.setLookAt(.0, .0, .0, -0.1, .0, -1.0, .0, 1.0, .0);//等价于mat1
+        var mat3 = viewMat3.elements;
+
+        console.log('视图矩阵：', mat1, mat2, mat3);
+        gl.uniformMatrix4fv(gl.getUniformLocation(gl.program, 'myView'), false, mat3);
+
+        //8、画图
+        gl.drawArrays(gl.POINTS, 0, 4);
+    }
+
+</script>
+</body>
+</html>
