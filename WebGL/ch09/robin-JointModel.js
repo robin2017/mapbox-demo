@@ -3,20 +3,14 @@
 var VSHADER_SOURCE =
     'attribute vec4 a_Position;\n' +
     'uniform mat4 u_MvpMatrix;\n' +
-    'varying vec4 v_Color;\n' +
     'void main() {\n' +
     '  gl_Position = u_MvpMatrix * a_Position;\n' +
-    '  v_Color = vec4(1.0,.0,.0,1.0);\n' +
     '}\n';
 
 // Fragment shader program
 var FSHADER_SOURCE =
-    '#ifdef GL_ES\n' +
-    'precision mediump float;\n' +
-    '#endif\n' +
-    'varying vec4 v_Color;\n' +
     'void main() {\n' +
-    '  gl_FragColor = v_Color;\n' +
+    '  gl_FragColor = vec4(1.0,.0,.0,1.0);\n' +
     '}\n';
 
 function main() {
@@ -102,15 +96,6 @@ function initVertexBuffers(gl) {
         1.5,  0.0,-1.5, -1.5,  0.0,-1.5, -1.5, 10.0,-1.5,  1.5, 10.0,-1.5  // v4-v7-v6-v5 back
     ]);
 
-    // Normal
-    var normals = new Float32Array([
-        0.0, 0.0, 1.0,  0.0, 0.0, 1.0,  0.0, 0.0, 1.0,  0.0, 0.0, 1.0, // v0-v1-v2-v3 front
-        1.0, 0.0, 0.0,  1.0, 0.0, 0.0,  1.0, 0.0, 0.0,  1.0, 0.0, 0.0, // v0-v3-v4-v5 right
-        0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0, // v0-v5-v6-v1 up
-        -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, // v1-v6-v7-v2 left
-        0.0,-1.0, 0.0,  0.0,-1.0, 0.0,  0.0,-1.0, 0.0,  0.0,-1.0, 0.0, // v7-v4-v3-v2 down
-        0.0, 0.0,-1.0,  0.0, 0.0,-1.0,  0.0, 0.0,-1.0,  0.0, 0.0,-1.0  // v4-v7-v6-v5 back
-    ]);
 
     // Indices of the vertices
     var indices = new Uint8Array([
@@ -124,7 +109,7 @@ function initVertexBuffers(gl) {
 
     // Write the vertex property to buffers (coordinates and normals)
     if (!initArrayBuffer(gl, 'a_Position', vertices, gl.FLOAT, 3)) return -1;
-   // if (!initArrayBuffer(gl, 'a_Normal', normals, gl.FLOAT, 3)) return -1;
+
 
     // Unbind the buffer object
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -185,18 +170,12 @@ function draw(gl, n, viewProjMatrix, u_MvpMatrix) {
     drawBox(gl, n, viewProjMatrix, u_MvpMatrix); // Draw
 }
 
-var g_normalMatrix = new Matrix4(); // Coordinate transformation matrix for normals
-
 // Draw the cube
 function drawBox(gl, n, viewProjMatrix, u_MvpMatrix) {
     // Calculate the model view project matrix and pass it to u_MvpMatrix
     g_mvpMatrix.set(viewProjMatrix);
     g_mvpMatrix.multiply(g_modelMatrix);
     gl.uniformMatrix4fv(u_MvpMatrix, false, g_mvpMatrix.elements);
-    // Calculate the normal transformation matrix and pass it to u_NormalMatrix
-    g_normalMatrix.setInverseOf(g_modelMatrix);
-    g_normalMatrix.transpose();
-  //  gl.uniformMatrix4fv(u_NormalMatrix, false, g_normalMatrix.elements);
     // Draw
     gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_BYTE, 0);
 }
