@@ -2,17 +2,10 @@
 // Vertex shader program
 var VSHADER_SOURCE =
     'attribute vec4 a_Position;\n' +
-    'attribute vec4 a_Normal;\n' +
     'uniform mat4 u_MvpMatrix;\n' +
-    'uniform mat4 u_NormalMatrix;\n' +
     'varying vec4 v_Color;\n' +
     'void main() {\n' +
     '  gl_Position = u_MvpMatrix * a_Position;\n' +
-    // Shading calculation to make the arm look three-dimensional
-    '  vec3 lightDirection = normalize(vec3(0.0, 0.5, 0.7));\n' + // Light direction
-    '  vec4 color = vec4(1.0, 0.4, 0.0, 1.0);\n' +
-    '  vec3 normal = normalize((u_NormalMatrix * a_Normal).xyz);\n' +
-    '  float nDotL = max(dot(normal, lightDirection), 0.0);\n' +
     '  v_Color = vec4(1.0,.0,.0,1.0);\n' +
     '}\n';
 
@@ -56,8 +49,8 @@ function main() {
 
     // Get the storage locations of uniform variables
     var u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_MvpMatrix');
-    var u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
-    if (!u_MvpMatrix || !u_NormalMatrix) {
+    // var u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
+    if (!u_MvpMatrix ) {
         console.log('Failed to get the storage location');
         return;
     }
@@ -67,17 +60,18 @@ function main() {
     viewProjMatrix.setPerspective(50.0, canvas.width / canvas.height, 1.0, 100.0);
     viewProjMatrix.lookAt(20.0, 10.0, 30.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
-    // Register the event handler to be called when keys are pressed
-    document.onkeydown = function(ev){ keydown(ev, gl, n, viewProjMatrix, u_MvpMatrix, u_NormalMatrix); };
 
-    draw(gl, n, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);  // Draw the robot arm
+    // Register the event handler to be called when keys are pressed
+    document.onkeydown = function(ev){ keydown(ev, gl, n, viewProjMatrix, u_MvpMatrix); };
+
+    draw(gl, n, viewProjMatrix, u_MvpMatrix);  // Draw the robot arm
 }
 
 var ANGLE_STEP = 3.0;    // The increments of rotation angle (degrees)
 var g_arm1Angle = -90.0; // The rotation angle of arm1 (degrees)
 var g_joint1Angle = 0.0; // The rotation angle of joint1 (degrees)
 
-function keydown(ev, gl, n, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+function keydown(ev, gl, n, viewProjMatrix, u_MvpMatrix) {
     switch (ev.keyCode) {
         case 38: // Up arrow key -> the positive rotation of joint1 around the z-axis
             if (g_joint1Angle < 135.0) g_joint1Angle += ANGLE_STEP;
@@ -94,7 +88,7 @@ function keydown(ev, gl, n, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
         default: return; // Skip drawing at no effective action
     }
     // Draw the robot arm
-    draw(gl, n, viewProjMatrix, u_MvpMatrix, u_NormalMatrix);
+    draw(gl, n, viewProjMatrix, u_MvpMatrix);
 }
 
 function initVertexBuffers(gl) {
@@ -130,7 +124,7 @@ function initVertexBuffers(gl) {
 
     // Write the vertex property to buffers (coordinates and normals)
     if (!initArrayBuffer(gl, 'a_Position', vertices, gl.FLOAT, 3)) return -1;
-    if (!initArrayBuffer(gl, 'a_Normal', normals, gl.FLOAT, 3)) return -1;
+   // if (!initArrayBuffer(gl, 'a_Normal', normals, gl.FLOAT, 3)) return -1;
 
     // Unbind the buffer object
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -174,7 +168,7 @@ function initArrayBuffer(gl, attribute, data, type, num) {
 // Coordinate transformation matrix
 var g_modelMatrix = new Matrix4(), g_mvpMatrix = new Matrix4();
 
-function draw(gl, n, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+function draw(gl, n, viewProjMatrix, u_MvpMatrix) {
     // Clear color and depth buffer
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -182,19 +176,19 @@ function draw(gl, n, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
     var arm1Length = 10.0; // Length of arm1
     g_modelMatrix.setTranslate(0.0, -12.0, 0.0);
     g_modelMatrix.rotate(g_arm1Angle, 0.0, 1.0, 0.0);    // Rotate around the y-axis
-    drawBox(gl, n, viewProjMatrix, u_MvpMatrix, u_NormalMatrix); // Draw
+    drawBox(gl, n, viewProjMatrix, u_MvpMatrix); // Draw
 
     // Arm2
     g_modelMatrix.translate(0.0, arm1Length, 0.0); 　　　// Move to joint1
     g_modelMatrix.rotate(g_joint1Angle, 0.0, 0.0, 1.0);  // Rotate around the z-axis
     g_modelMatrix.scale(1.3, 1.0, 1.3); // Make it a little thicker
-    drawBox(gl, n, viewProjMatrix, u_MvpMatrix, u_NormalMatrix); // Draw
+    drawBox(gl, n, viewProjMatrix, u_MvpMatrix); // Draw
 }
 
 var g_normalMatrix = new Matrix4(); // Coordinate transformation matrix for normals
 
 // Draw the cube
-function drawBox(gl, n, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
+function drawBox(gl, n, viewProjMatrix, u_MvpMatrix) {
     // Calculate the model view project matrix and pass it to u_MvpMatrix
     g_mvpMatrix.set(viewProjMatrix);
     g_mvpMatrix.multiply(g_modelMatrix);
@@ -202,7 +196,7 @@ function drawBox(gl, n, viewProjMatrix, u_MvpMatrix, u_NormalMatrix) {
     // Calculate the normal transformation matrix and pass it to u_NormalMatrix
     g_normalMatrix.setInverseOf(g_modelMatrix);
     g_normalMatrix.transpose();
-    gl.uniformMatrix4fv(u_NormalMatrix, false, g_normalMatrix.elements);
+  //  gl.uniformMatrix4fv(u_NormalMatrix, false, g_normalMatrix.elements);
     // Draw
     gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_BYTE, 0);
 }
