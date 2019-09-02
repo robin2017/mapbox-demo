@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="drawUtil.js"></script>
+    <script src="myMat.js"></script>
+</head>
+<body>
+<svg width="800" height="600" style="background-color: #eee" id="svg"></svg>
+
+<div>
+
+    <button onclick="plotInit()">双箭头</button>
+</div>
+<div>
+    <img src="1q2.png" alt="">
+</div>
+<script>
+    let color = 'black', lineWidth = '1';//默认设置
+    const DEBUG = true;
+    let state = -1;
+    let type = null;
+    let downPoints = [];
+    let overPoints = [];
+    let drawObj = null;
+    drawObjC4 = [];
+    const svg = document.querySelector('#svg');
+
+
+    //将按下点位置放入
+    function mousedown(e) {
+        if(state===-1) return;
+        state += 1;
+        downPoints.push([e.offsetX, e.offsetY]);
+        plot()
+    }
+
+    function mousemove(e) {
+        overPoints = [e.offsetX, e.offsetY];
+        plot()
+    }
+
+
+    function plotInit() {
+        state=0;
+        svg.addEventListener('mousedown', mousedown);
+        svg.addEventListener('mousemove', mousemove);
+    }
+
+    function plot() {
+        if (state === 1) {
+            if (drawObj === null) {
+                drawObj = drawLine(downPoints[0], overPoints)
+            } else {
+                modifyLine(drawObj, overPoints)
+            }
+
+        } else if (state === 2 || state === 3) {
+            modifyLine(drawObj, downPoints[1]);
+            let points4 = [downPoints[0], downPoints[1], downPoints[2] ? downPoints[2] : overPoints, overPoints];
+            //清空上一次痕迹(维持状态太麻烦),不能清空全部，看来只能维持状态了
+            for (var i = svg.childNodes.length - 1; i >= 0; i--) {
+                svg.removeChild(svg.childNodes[i])
+            }
+            plotWith4Points(points4)
+        }else if(state===4){
+            console.log('绘制完成，清空状态')
+            downPoints = [];
+            state = -1;
+        }
+    }
+
+    function plotWith4Points(points) {
+        const angle1 = 40, angle2 = 30;
+        let c1 = points[0], c2 = points[1], c3 = points[2], c4 = points[3];
+        drawDebugPoint(c1);
+        drawDebugPoint(c2);
+        drawDebugPoint(c3);
+        drawDebugPoint(c4);
+        //step1：计算ct1/ct2
+        getCfromAB(c2, c3, -30);
+        let ct1 = getCfromAB(c2, c3, 0 - angle1);
+        let ct2 = getCfromAB(c1, c4, angle1);
+        drawDebugPoint(ct1, 'blue');
+        drawDebugPoint(ct2, 'blue');
+        //step2:计算cx1/cx2
+        let cx1 = rotateB(c3, ct1, 0 - angle2);
+        drawDebugPoint(cx1, 'red');
+        let cx2 = rotateB(c4, ct2, angle2)
+        drawDebugPoint(cx2, 'red');
+        //step3:求中点：a1,a2
+        let a1 = getPartPoint(cx1, ct1, 2);
+        drawDebugPoint(a1, 'yellow');
+        let a2 = getPartPoint(cx2, ct2, 2);
+        drawDebugPoint(a2, 'yellow');
+
+        //step4:求箭头点
+        let c31 = getPartPoint(c3, a1, 3)
+        drawDebugPoint(c31, '#777');
+        let c32 = getPartPoint(c3, cx1, 3)
+        drawDebugPoint(c32, '#777');
+        let c41 = getPartPoint(c4, a2, 3)
+        drawDebugPoint(c41, '#777');
+        let c42 = getPartPoint(c4, cx2, 3)
+        drawDebugPoint(c42, '#777');
+
+        //step5:构建外侧：端点c2,c32,控制点ct1
+        drawBys2(c2, c31, ct1);
+        drawBys2(c1, c41, ct2);
+        //step6:得到中点ci1,ci2
+        let M = [(c1[0] + c2[0]) / 2, (c1[1] + c2[1]) / 2];
+        let ci1 = getPartPoint(cx1, M, 2);
+        let ci2 = getPartPoint(cx2, M, 2);
+        drawDebugPoint(M, '#259');
+        drawDebugPoint(ci1, '#259');
+        drawDebugPoint(ci2, '#259');
+        //step7：构建内侧：c32,cx1,ci1
+        drawBys2(c32, ci1, cx1)
+        drawBys2(ci1, ci2, M);
+        drawBys2(ci2, c42, cx2)
+        drawLine(c1, c2)
+        //step8:得到箭头点
+        let c31e = getPointEx(c3, c31, 0.5, 60)
+        drawDebugPoint(c31e, '#259');
+        let c32e = getPointEx(c3, c32, 0.5, -60)
+        drawDebugPoint(c32e, '#900');
+        let c41e = getPointEx(c4, c41, 0.5, -60)
+        drawDebugPoint(c41e, '#259');
+        let c42e = getPointEx(c4, c42, 0.5, 60)
+        drawDebugPoint(c42e, '#900');
+        //step9 :绘制箭头
+        drawArrow(c3, c31, c31e, c32, c32e);
+        drawArrow(c4, c41, c41e, c42, c42e);
+    }
+
+    //输入为数组格式
+    //ac,bc,ae,de
+    function drawArrow(a, b, c, d, e) {
+        drawLine(a, c);
+        drawLine(b, c);
+        drawLine(a, e);
+        drawLine(d, e);
+    }
+
+</script>
+</body>
+</html>

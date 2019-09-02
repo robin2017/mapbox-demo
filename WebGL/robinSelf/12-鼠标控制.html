@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>1、绘制多个点</h1>
+<canvas id="canvas" width="400" height="400"></canvas>
+<script src="../lib/cuon-matrix.js"></script>
+<script src="robin-utils.js"></script>
+<script>
+    main();
+
+    async function main() {
+        const FSIZE = 4;
+        //1、得到gl
+        const canvas = document.getElementById('canvas');
+        const gl = canvas.getContext('webgl');
+        //2、获取数据
+        const src = await Promise.all([robinUtils.request('12.vert'),
+            robinUtils.request('12.frag')]);
+        //3、设置并应用黑色背景
+        gl.clearColor(0.0, .0, .0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        //4、初始化着色器
+        robinUtils.initShaders(gl, src[0], src[1]);
+        //5、初始化数据缓存(x,y,r,g,b)
+        robinUtils.initDataBuffer(gl, new Float32Array([
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0,  // v0 White
+            -1.0, 1.0, 1.0, 1.0, 0.0, 1.0,  // v1 Magenta
+            -1.0, -1.0, 1.0, 1.0, 0.0, 0.0,  // v2 Red
+            1.0, -1.0, 1.0, 1.0, 1.0, 0.0,  // v3 Yellow
+            1.0, -1.0, -1.0, 0.0, 1.0, 0.0,  // v4 Green
+            1.0, 1.0, -1.0, 0.0, 1.0, 1.0,  // v5 Cyan
+            -1.0, 1.0, -1.0, 0.0, 0.0, 1.0,  // v6 Blue
+            -1.0, -1.0, -1.0, 0.0, 0.0, 0.0   // v7 Black
+        ]));
+        //6、得到位置数据并赋值
+        gl.vertexAttribPointer(gl.getAttribLocation(gl.program, 'myPosition'), 3, gl.FLOAT, true, FSIZE * 6, FSIZE * 0);
+        gl.enableVertexAttribArray(gl.getAttribLocation(gl.program, 'myPosition'));
+        gl.vertexAttribPointer(gl.getAttribLocation(gl.program, 'myColor'), 3, gl.FLOAT, true, FSIZE * 6, FSIZE * 3);
+        gl.enableVertexAttribArray(gl.getAttribLocation(gl.program, 'myColor'));
+        //7、得到位置索引并赋值
+        robinUtils.initIndexBuffer(gl, new Uint8Array([
+            0, 1, 2, 0, 2, 3,    // front
+            0, 3, 4, 0, 4, 5,    // right
+            0, 5, 6, 0, 6, 1,    // up
+            1, 6, 7, 1, 7, 2,    // left
+            7, 4, 3, 7, 3, 2,    // down
+            4, 7, 6, 4, 6, 5     // back
+        ]));
+
+        var myView = gl.getUniformLocation(gl.program, 'myView');
+        gl.enable(gl.DEPTH_TEST);//开启遮蔽效果
+        draw(0, 0);
+
+        function draw(angleX, angleY) {
+            var myMat = new Matrix4();
+            myMat.setPerspective(30, 1, 1, 100);
+            myMat.lookAt(0, 3, 8, 0, 0, 0, 0, 1, 0);
+            myMat.rotate(angleX, 1.0, 0.0, 0.0); // Rotation around x-axis
+            myMat.rotate(angleY, 0.0, 1.0, 0.0); // Rotation around y-axis
+
+            gl.uniformMatrix4fv(myView, false, myMat.elements);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
+        }
+
+        initEventHandlers(canvas, draw)
+    }
+
+
+    function initEventHandlers(canvas, drawCb) {
+        const maxAngle = 90;
+        var rect = null;//只需要记录一次
+        var dragging = false;         // Dragging or not
+        var lastX = 0, lastY = 0;   // Last position of the mouse
+        var angleX = 0, angleY = 0;
+        var lastAngleX = 0, lastAngleY = 0;
+        //判断是否在区域内
+        function isInRect(rect, x, y) {
+            return rect.left <= x && x < rect.right
+                && rect.top <= y && y < rect.bottom
+        }
+        canvas.onmousedown = function (ev) {
+            var x = ev.clientX, y = ev.clientY;
+            //得到目标在屏幕上位置：top,bottom,left,right
+            rect = rect ? rect : ev.target.getBoundingClientRect();
+            if (isInRect(rect, x, y)) {
+                lastX = x;
+                lastY = y;
+                dragging = true;
+            }
+        };
+        canvas.onmouseup = function (ev) {
+            lastAngleX = angleX;
+            lastAngleY = angleY;
+            dragging = false;
+        };
+        canvas.onmousemove = function (ev) { // Mouse is moved
+            if (!dragging) return;
+            var x = ev.clientX, y = ev.clientY;
+            if (!isInRect(rect, x, y)) {
+                lastAngleX = angleX;
+                lastAngleY = angleY;
+                dragging = false;
+            }
+            angleX = (x - lastX) / rect.width * maxAngle + lastAngleX;
+            angleY = (y - lastY) / rect.height * maxAngle + lastAngleY;
+            drawCb(angleY, angleX)//xy互调
+        };
+    }
+</script>
+</body>
+</html>

@@ -73,7 +73,8 @@ function main() {
 
   var tick = function() {   // Start drawing
     draw(gl, n, viewProjMatrix, u_MvpMatrix, currentAngle);
-    requestAnimationFrame(tick, canvas);
+    console.log('后台为啥一直绘制')
+    requestAnimationFrame(tick);
   };
   tick();
 }
@@ -143,6 +144,7 @@ function initEventHandlers(canvas, currentAngle) {
     var x = ev.clientX, y = ev.clientY;
     // Start dragging if a moue is in <canvas>
     var rect = ev.target.getBoundingClientRect();
+      console.log('ddd:',ev.target.getBoundingClientRect())
     if (rect.left <= x && x < rect.right && rect.top <= y && y < rect.bottom) {
       lastX = x; lastY = y;
       dragging = true;
@@ -152,14 +154,20 @@ function initEventHandlers(canvas, currentAngle) {
   canvas.onmouseup = function(ev) { dragging = false;  }; // Mouse is released
 
   canvas.onmousemove = function(ev) { // Mouse is moved
+      var rect = ev.target.getBoundingClientRect();
     var x = ev.clientX, y = ev.clientY;
+      if (!(rect.left <= x && x < rect.right && rect.top <= y && y < rect.bottom)) {
+          dragging = false
+      }
     if (dragging) {
       var factor = 100/canvas.height; // The rotation ratio
       var dx = factor * (x - lastX);
       var dy = factor * (y - lastY);
+      console.log('dx,dy:',dx,dy)
       // Limit x-axis rotation angle to -90 to 90 degrees
       currentAngle[0] = Math.max(Math.min(currentAngle[0] + dy, 90.0), -90.0);
       currentAngle[1] = currentAngle[1] + dx;
+      console.log('currentAngle:',currentAngle)
     }
     lastX = x, lastY = y;
   };
